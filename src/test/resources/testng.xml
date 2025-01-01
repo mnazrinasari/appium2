@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="CalculatorTestSuite">
+    <test name="CalculatorTests">
+        <classes>
+            <class name="test.AppTest"/>
+        </classes>
+    </test>
+</suite>
