@@ -12,12 +12,14 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest  # Ensure tests run on macOS
+    runs-on: macos-15  # Ensure tests run on macOS
 
     steps:
-      # Step 1: Checkout the code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+      - name: Run tests
+        run: swift test
 
       # Step 2: Set up JDK 11
       - name: Set up JDK 11
