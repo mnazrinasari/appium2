@@ -25,6 +25,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '11'  # Specify the JDK version you want to use
+          distribution: 'adoptopenjdk'  # Specify the distribution, e.g., adoptopenjdk, zulu, etc.
 
       # Step 3: Cache Maven dependencies (Optional but recommended to speed up builds)
       - name: Cache Maven dependencies
