@@ -41,10 +41,10 @@ jobs:
         env:
           MAVEN_OPTS: "-Xmx2g"  # Optionally set Java memory options
 
-      # Step 5: Optionally, you can publish test results
+      # Step 5: Optionally, you can upload test results
       - name: Upload Test Results (JUnit)
         if: always()  # This ensures the step runs even if previous steps fail
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-results
           path: target/test-*.xml  # Adjust this path if needed
@@ -52,7 +52,7 @@ jobs:
       # Step 6: Optionally, you can upload the built artifacts
       - name: Upload build artifacts
         if: success()  # Only upload if build is successful
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
           path: target/*.jar  # Adjust to match your output file type (e.g., .jar, .war)
