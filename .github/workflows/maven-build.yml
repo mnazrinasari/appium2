@@ -81,14 +81,18 @@ jobs:
           git clone https://github.com/${{ github.repository }}.git github-pages
           cd github-pages
           
-          # Create gh-pages branch if it doesn't exist or switch to it
-          git checkout -b gh-pages || git checkout gh-pages
+          # Check if gh-pages exists. If not, create it.
+          git fetch origin
+          if git show-ref --verify --quiet refs/heads/gh-pages; then
+            git checkout gh-pages
+          else
+            git checkout -b gh-pages  # Create and checkout gh-pages if it doesn't exist
+          fi
           
           # Pull the latest changes from the remote gh-pages branch with rebase
-          git pull --rebase origin gh-pages
+          git pull --rebase origin gh-pages || echo "No existing gh-pages branch to pull"
           
           # Copy the emailable report into the 'surefire-report' directory
-          # Ensure that we copy the files into a folder named 'surefire-report'
           mkdir -p surefire-report
           cp -r ../target/surefire-reports/emailable-report.html surefire-report/
           
@@ -116,4 +120,9 @@ jobs:
           curl -X POST https://api.sendinblue.com/v3/smtp/email \
             -H "api-key: $SENDINBLUE_API_KEY" \
             -H "Content-Type: application/json" \
-      
+            -d '{
+              "sender": { "email": "'"$SENDINBLUE_SENDER_EMAIL"'" },
+              "to": [ { "email": "'"$SENDINBLUE_RECIPIENT_EMAIL"'" } ],
+              "subject": "'"$EMAIL_SUBJECT"'",
+              "htmlContent": "<html><body><p>'"$EMAIL_BODY"'</p></body></html>"
+          }'
