@@ -128,7 +128,7 @@ jobs:
               "sender": { "email": "'"$SENDINBLUE_SENDER_EMAIL"'" },
               "to": [ { "email": "'"$SENDINBLUE_RECIPIENT_EMAIL"'" } ],
               "subject": "'"$EMAIL_SUBJECT"'",
-              "htmlContent": "<html><body><p>Your TestNG tests have completed successfully. Check the report in the following link: <a href=\"https://github.com/${{ github.repository }}/blob/gh-pages/surefire-report/emailable-report.html\">TestNG Emailable Report</a></p></body></html>"
+              "htmlContent": "<html><body><p>Your TestNG tests have completed successfully. Check the report in the following link: <a href=\"https://<your-username>.github.io/<repository-name>/surefire-report/emailable-report.html\">TestNG Emailable Report</a></p></body></html>"
           }'
         shell: /bin/bash -e {0}
         env:
