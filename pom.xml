@@ -4,45 +4,60 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.example</groupId>
-  <artifactId>macos-calculator</artifactId> <!-- Update artifactId here -->
+  <artifactId>macos-calculator</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
+  <!-- Properties to specify Java version -->
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source> <!-- Set source to Java 11 -->
+    <maven.compiler.target>11</maven.compiler.target> <!-- Set target to Java 11 -->
+  </properties>
+
   <dependencies>
+    <!-- Appium Java Client -->
     <dependency>
       <groupId>io.appium</groupId>
       <artifactId>java-client</artifactId>
       <version>7.3.0</version>
     </dependency>
 
+    <!-- TestNG for running tests -->
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <version>7.1.0</version> <!-- You can use a newer version if needed -->
+      <version>7.1.0</version> <!-- Update to the version of your choice -->
       <scope>test</scope>
     </dependency>
 
   </dependencies>
 
-
   <build>
     <plugins>
+      <!-- Compiler Plugin for Java version -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version> <!-- Use latest version -->
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
+
       <!-- Surefire Plugin to run TestNG tests -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.2</version>
         <configuration>
-          <!-- Include the TestNG suite XML file -->
           <suiteXmlFiles>
-            <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile> <!-- Adjust the path if necessary -->
+            <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile> <!-- Ensure the correct path -->
           </suiteXmlFiles>
         </configuration>
       </plugin>
 
-
     </plugins>
   </build>
-
 
 </project>
