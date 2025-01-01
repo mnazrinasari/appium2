@@ -16,18 +16,18 @@ jobs:
     runs-on: ubuntu-latest  # The OS for your GitHub Action runner
 
     steps:
-      # Step 1: Checkout code from the repository
+      # Step 1: Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Set up Java (JDK 11 from Eclipse Temurin)
+      # Step 2: Set up JDK 11 using Eclipse Temurin (successor of AdoptOpenJDK)
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
           java-version: '11'  # Specify the JDK version you want to use
           distribution: 'temurin'  # Use Eclipse Temurin (successor of AdoptOpenJDK)
 
-      # Step 3: Cache Maven dependencies (Optional but recommended to speed up builds)
+      # Step 3: Cache Maven dependencies to speed up builds
       - name: Cache Maven dependencies
         uses: actions/cache@v2
         with:
@@ -36,13 +36,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Step 4: Build and test the project using Maven
+      # Step 4: Install Appium globally using npm
+      - name: Install Appium
+        run: |
+          npm install -g appium
+
+      # Step 5: Start the Appium server in the background
+      - name: Start Appium server
+        run: |
+          nohup appium > appium.log 2>&1 &
+
+      # Step 6: Wait for the Appium server to be ready (optional but recommended)
+      - name: Wait for Appium server
+        run: |
+          sleep 10  # You can adjust the time as per your setup
+
+      # Step 7: Build and test the project using Maven
       - name: Build with Maven
         run: mvn clean install  # You can replace with mvn clean verify or your custom command
         env:
-          MAVEN_OPTS: "-Xmx2g"  # Optionally set Java memory options
+          MAVEN_OPTS: "-Xmx2g"  # Optionally set Java memory options for Maven
 
-      # Step 5: Optionally, you can upload test results
+      # Step 8: Optionally, upload test results (JUnit or other formats)
       - name: Upload Test Results (JUnit)
         if: always()  # This ensures the step runs even if previous steps fail
         uses: actions/upload-artifact@v3
@@ -50,9 +65,9 @@ jobs:
           name: test-results
           path: target/test-*.xml  # Adjust this path if needed
 
-      # Step 6: Optionally, you can upload the built artifacts
+      # Step 9: Optionally, upload the built artifacts (e.g., .jar files)
       - name: Upload build artifacts
-        if: success()  # Only upload if build is successful
+        if: success()  # Only upload if the build is successful
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
