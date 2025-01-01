@@ -61,27 +61,59 @@ jobs:
         env:
           MAVEN_OPTS: "-Xmx2g"
 
-      # Step 9: Upload Test Results (JUnit or other formats)
-      - name: Upload Test Results (JUnit)
-        if: always()  # Always run even if previous steps fail
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: target/surefire-reports/testng-*.xml  # Adjust path as necessary
-
-      # Step 10: Upload emailable report artifact
+      # Step 9: Upload emailable report artifact
       - name: Upload emailable report
         if: success()
         uses: actions/upload-artifact@v3
         with:
           name: emailable-report
-          path: target/site/emailable-report.html  # Path to the generated emailable report
+          path: target/surefire-reports/emailable-report.html  # Path to the generated emailable report
 
-      # Step 11: Email the emailable report (using a custom script)
-      - name: Send email with emailable report
-        if: success()  # Only send if previous steps are successful
+      # Step 10: Deploy Emailable Report to GitHub Pages
+      - name: Deploy Emailable Report to GitHub Pages
+        if: ${{ always() }}  # Ensure this step runs even if previous steps fail
         run: |
-          # Setup mutt or another mail client to send the email
-          echo "Sending emailable report..." 
-          echo "Subject: Test Results for $GITHUB_REPOSITORY" | mutt -s "Test Results" -a target/site/emailable-report.html -- ${{ secrets.RECIPIENT_EMAIL }}
+          # Deploy the emailable report to GitHub Pages
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Clone the repository and switch to gh-pages branch
+          git clone https://github.com/${{ github.repository }}.git github-pages
+          cd github-pages
+          
+          # Create gh-pages branch if it doesn't exist or switch to it
+          git checkout -b gh-pages || git checkout gh-pages
+          
+          # Pull the latest changes from the remote gh-pages branch with rebase
+          git pull --rebase origin gh-pages
+          
+          # Copy the emailable report into the 'surefire-report' directory
+          # Ensure that we copy the files into a folder named 'surefire-report'
+          mkdir -p surefire-report
+          cp -r ../target/surefire-reports/emailable-report.html surefire-report/
+          
+          # Add, commit, and push the changes to the gh-pages branch
+          git add .
+          git commit -m "Deploy TestNG emailable report"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git gh-pages
 
+      # Step 11: Send email with emailable report using Sendinblue API
+      - name: Send email with emailable report link using Sendinblue API
+        if: ${{ always() }}  # Ensure this step runs even if previous steps fail
+        run: |
+          # Install curl for API request
+          sudo apt-get update
+          sudo apt-get install -y curl
+          
+          # Set environment variables from GitHub secrets
+          SENDINBLUE_API_KEY="${{ secrets.SENDINBLUE_API_KEY }}"
+          SENDINBLUE_SENDER_EMAIL="${{ secrets.SENDINBLUE_SENDER_EMAIL }}"
+          SENDINBLUE_RECIPIENT_EMAIL="${{ secrets.SENDINBLUE_RECIPIENT_EMAIL }}"
+          EMAIL_SUBJECT="TestNG Tests Completed - Emailable Report"
+          EMAIL_BODY="Your TestNG tests have completed successfully. Check the report in the following link: https://github.com/${{ github.repository }}/blob/gh-pages/surefire-report/emailable-report.html"
+          
+          # Prepare the email payload and send using Sendinblue API
+          curl -X POST https://api.sendinblue.com/v3/smtp/email \
+            -H "api-key: $SENDINBLUE_API_KEY" \
+            -H "Content-Type: application/json" \
+      
