@@ -4,16 +4,14 @@ on:
   push:
     branches:
       - main
-      - develop
   pull_request:
     branches:
       - main
-      - develop
-  workflow_dispatch:   # Enable manual trigger
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   build:
-    runs-on: macos-15  # Ensure tests run on macOS
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout the code from the repository
@@ -24,7 +22,7 @@ jobs:
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
-          java-version: '11'  # Specify the JDK version
+          java-version: '11'
           distribution: 'temurin'
 
       # Step 3: Cache Maven dependencies
@@ -36,65 +34,32 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Step 4: Install Appium 2.x globally
-      - name: Install Appium 2.x
-        run: |
-          npm install -g appium
-
-      # Step 5: Install Appium mac2 driver
-      - name: Install Appium mac2 driver
-        run: |
-          appium driver install mac2
-
-      # Step 6: Start Appium server
-      - name: Start Appium server
-        run: |
-          nohup appium > appium.log 2>&1 &
-
-      # Step 7: Wait for Appium server to be ready
-      - name: Wait for Appium server
-        run: |
-          sleep 10
-
-      # Step 8: Build with Maven
+      # Step 4: Build with Maven
       - name: Build with Maven
         run: mvn clean install
         env:
           MAVEN_OPTS: "-Xmx2g"
 
-      # Step 9: Upload emailable report artifact
-      - name: Upload emailable report
-        if: success()
-        uses: actions/upload-artifact@v3
-        with:
-          name: emailable-report
-          path: target/surefire-reports/emailable-report.html  # Path to the generated emailable report
-
-      # Step 10: Deploy Emailable Report to GitHub Pages
-      - name: Deploy Emailable Report to GitHub Pages
-        if: ${{ always() }}  # Ensure this step runs even if previous steps fail
+      # Step 5: Deploy the TestNG report to GitHub Pages
+      - name: Deploy TestNG Report to GitHub Pages
         run: |
-          # Deploy the emailable report to GitHub Pages
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          
+
           # Clone the repository and switch to gh-pages branch
           git clone https://github.com/${{ github.repository }}.git github-pages
           cd github-pages
           
-          # Check if gh-pages exists. If not, create it.
-          git fetch origin
-          if git show-ref --verify --quiet refs/heads/gh-pages; then
-            git checkout gh-pages
-          else
-            git checkout -b gh-pages  # Create and checkout gh-pages if it doesn't exist
-          fi
+          # Create gh-pages branch if it doesn't exist or switch to it
+          git checkout -b gh-pages || git checkout gh-pages
           
           # Pull the latest changes from the remote gh-pages branch with rebase
-          git pull --rebase origin gh-pages || echo "No existing gh-pages branch to pull"
+          git pull --rebase origin gh-pages
           
-          # Copy the emailable report into the 'surefire-report' directory
+          # Create the surefire-report directory (if not already there)
           mkdir -p surefire-report
+
+          # Copy the emailable-report.html into the surefire-report directory
           cp -r ../target/surefire-reports/emailable-report.html surefire-report/
           
           # Add, commit, and push the changes to the gh-pages branch
@@ -102,34 +67,15 @@ jobs:
           git commit -m "Deploy TestNG emailable report"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git gh-pages
 
-      # Step 11: Send email with emailable report using Sendinblue API
-      - name: Send email with emailable report link using Sendinblue API
-        if: ${{ always() }}  # Ensure this step runs even if previous steps fail
+      # Step 6: Send email with the link to the deployed emailable report
+      - name: Send email with report link using Sendinblue API
         run: |
-          # Install curl for API request (use Homebrew for macOS)
-          if ! command -v curl &> /dev/null
-          then
-            echo "curl not found, installing..."
-            brew install curl
-          fi
-          
-          # Set environment variables from GitHub secrets
-          SENDINBLUE_API_KEY="${{ secrets.SENDINBLUE_API_KEY }}"
-          SENDINBLUE_SENDER_EMAIL="${{ secrets.SENDINBLUE_SENDER_EMAIL }}"
-          SENDINBLUE_RECIPIENT_EMAIL="${{ secrets.SENDINBLUE_RECIPIENT_EMAIL }}"
-          EMAIL_SUBJECT="TestNG Tests Completed - Emailable Report"
-          EMAIL_BODY="Your TestNG tests have completed successfully. Check the report in the following link: https://github.com/mnazrinasari/appium2/blob/gh-pages/surefire-report/emailable-report.html"
-          
-          # Prepare the email payload and send using Sendinblue API
           curl -X POST https://api.sendinblue.com/v3/smtp/email \
-            -H "api-key: $SENDINBLUE_API_KEY" \
+            -H "api-key: ${{ secrets.SENDINBLUE_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{
-              "sender": { "email": "'"$SENDINBLUE_SENDER_EMAIL"'" },
-              "to": [ { "email": "'"$SENDINBLUE_RECIPIENT_EMAIL"'" } ],
-              "subject": "'"$EMAIL_SUBJECT"'",
-              "htmlContent": "<html><body><p>'"$EMAIL_BODY"'</p></body></html>"
-          }'
-        shell: /bin/bash -e {0}
-        env:
-          JAVA_HOME: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/11.0.25-9/x64/Contents/Home
+              "sender": { "email": "no-reply@mydomain.com" },
+              "to": [{ "email": "recipient@example.com" }],
+              "subject": "TestNG Tests Completed - Emailable Report",
+              "htmlContent": "<html><body><p>Your TestNG tests have completed successfully. Check the report in the following link: <a href=\"https://github.com/${{ github.repository }}/blob/gh-pages/surefire-report/emailable-report.html\">TestNG Emailable Report</a></p></body></html>"
+            }'
