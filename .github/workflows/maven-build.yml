@@ -1,6 +1,5 @@
 name: Maven Build and Test
 
-# Trigger workflow on push and pull request events
 on:
   push:
     branches:
@@ -13,68 +12,76 @@ on:
 
 jobs:
   build:
-    # Use macOS runner instead of Ubuntu
-    runs-on: macos-latest  # This ensures that the tests run on a macOS machine
+    runs-on: macos-latest  # Ensure tests run on macOS
 
     steps:
       # Step 1: Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Set up JDK 11 using Eclipse Temurin (successor of AdoptOpenJDK)
+      # Step 2: Set up JDK 11
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
-          java-version: '11'  # Specify the JDK version you want to use
-          distribution: 'temurin'  # Use Eclipse Temurin (successor of AdoptOpenJDK)
+          java-version: '11'  # Specify the JDK version
+          distribution: 'temurin'
 
-      # Step 3: Cache Maven dependencies to speed up builds
+      # Step 3: Cache Maven dependencies
       - name: Cache Maven dependencies
         uses: actions/cache@v2
         with:
-          path: ~/.m2/repository  # Path to the local Maven repository cache
+          path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Step 4: Install Appium 2.x globally using npm
+      # Step 4: Install Appium 2.x globally
       - name: Install Appium 2.x
         run: |
-          npm install -g appium  # Install Appium 2.x (latest version)
+          npm install -g appium
 
-      # Step 5: Install Appium mac2 driver via Appium CLI
+      # Step 5: Install Appium mac2 driver
       - name: Install Appium mac2 driver
         run: |
-          appium driver install mac2  # Install the mac2 driver for Appium 2.x
+          appium driver install mac2
 
-      # Step 6: Start the Appium server in the background
+      # Step 6: Start Appium server
       - name: Start Appium server
         run: |
           nohup appium > appium.log 2>&1 &
 
-      # Step 7: Wait for the Appium server to be ready (optional but recommended)
+      # Step 7: Wait for Appium server to be ready
       - name: Wait for Appium server
         run: |
-          sleep 10  # You can adjust the time as per your setup
+          sleep 10
 
-      # Step 8: Build and test the project using Maven
+      # Step 8: Build with Maven
       - name: Build with Maven
-        run: mvn clean install  # You can replace with mvn clean verify or your custom command
+        run: mvn clean install
         env:
-          MAVEN_OPTS: "-Xmx2g"  # Optionally set Java memory options for Maven
+          MAVEN_OPTS: "-Xmx2g"
 
-      # Step 9: Optionally, upload test results (JUnit or other formats)
+      # Step 9: Upload Test Results (JUnit or other formats)
       - name: Upload Test Results (JUnit)
-        if: always()  # This ensures the step runs even if previous steps fail
+        if: always()  # Always run even if previous steps fail
         uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: target/test-*.xml  # Adjust this path if needed
+          path: target/surefire-reports/testng-*.xml  # Adjust path as necessary
 
-      # Step 10: Optionally, upload the built artifacts (e.g., .jar files)
-      - name: Upload build artifacts
-        if: success()  # Only upload if the build is successful
+      # Step 10: Upload emailable report artifact
+      - name: Upload emailable report
+        if: success()
         uses: actions/upload-artifact@v3
         with:
-          name: build-artifacts
-          path: target/*.jar  # Adjust to match your output file type (e.g., .jar, .war)
+          name: emailable-report
+          path: target/site/emailable-report.html  # Path to the generated emailable report
+
+      # Step 11: Email the emailable report (using a custom script)
+      - name: Send email with emailable report
+        if: success()  # Only send if previous steps are successful
+        run: |
+          # Setup mutt or another mail client to send the email
+          echo "Sending emailable report..." 
+          echo "Subject: Test Results for $GITHUB_REPOSITORY" | mutt -s "Test Results" -a target/site/emailable-report.html -- ${{ secrets.RECIPIENT_EMAIL }}
+
