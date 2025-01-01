@@ -41,23 +41,28 @@ jobs:
         run: |
           npm install -g appium
 
-      # Step 5: Start the Appium server in the background
+      # Step 5: Install Appium mac2 driver for macOS automation
+      - name: Install Appium mac2 driver
+        run: |
+          npm install -g appium-driver-mac2
+
+      # Step 6: Start the Appium server in the background
       - name: Start Appium server
         run: |
           nohup appium > appium.log 2>&1 &
 
-      # Step 6: Wait for the Appium server to be ready (optional but recommended)
+      # Step 7: Wait for the Appium server to be ready (optional but recommended)
       - name: Wait for Appium server
         run: |
           sleep 10  # You can adjust the time as per your setup
 
-      # Step 7: Build and test the project using Maven
+      # Step 8: Build and test the project using Maven
       - name: Build with Maven
         run: mvn clean install  # You can replace with mvn clean verify or your custom command
         env:
           MAVEN_OPTS: "-Xmx2g"  # Optionally set Java memory options for Maven
 
-      # Step 8: Optionally, upload test results (JUnit or other formats)
+      # Step 9: Optionally, upload test results (JUnit or other formats)
       - name: Upload Test Results (JUnit)
         if: always()  # This ensures the step runs even if previous steps fail
         uses: actions/upload-artifact@v3
@@ -65,7 +70,7 @@ jobs:
           name: test-results
           path: target/test-*.xml  # Adjust this path if needed
 
-      # Step 9: Optionally, upload the built artifacts (e.g., .jar files)
+      # Step 10: Optionally, upload the built artifacts (e.g., .jar files)
       - name: Upload build artifacts
         if: success()  # Only upload if the build is successful
         uses: actions/upload-artifact@v3
