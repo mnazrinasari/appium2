@@ -36,15 +36,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Step 4: Install Appium globally using npm
-      - name: Install Appium
+      # Step 4: Install Appium 2.x globally using npm
+      - name: Install Appium 2.x
         run: |
-          npm install -g appium
+          npm install -g @appium/appium@next  # Install Appium 2.x (next version)
 
-      # Step 5: Install Appium mac2 driver for macOS automation
+      # Step 5: Install Appium mac2 driver via Appium CLI
       - name: Install Appium mac2 driver
         run: |
-          npm install -g appium-driver-mac2
+          appium driver install mac2  # Install the mac2 driver for Appium 2.x
 
       # Step 6: Start the Appium server in the background
       - name: Start Appium server
