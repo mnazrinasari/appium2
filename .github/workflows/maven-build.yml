@@ -106,16 +106,19 @@ jobs:
       - name: Send email with emailable report link using Sendinblue API
         if: ${{ always() }}  # Ensure this step runs even if previous steps fail
         run: |
-          # Install curl for API request
-          sudo apt-get update
-          sudo apt-get install -y curl
+          # Install curl for API request (use Homebrew for macOS)
+          if ! command -v curl &> /dev/null
+          then
+            echo "curl not found, installing..."
+            brew install curl
+          fi
           
           # Set environment variables from GitHub secrets
           SENDINBLUE_API_KEY="${{ secrets.SENDINBLUE_API_KEY }}"
           SENDINBLUE_SENDER_EMAIL="${{ secrets.SENDINBLUE_SENDER_EMAIL }}"
           SENDINBLUE_RECIPIENT_EMAIL="${{ secrets.SENDINBLUE_RECIPIENT_EMAIL }}"
           EMAIL_SUBJECT="TestNG Tests Completed - Emailable Report"
-          EMAIL_BODY="Your TestNG tests have completed successfully. Check the report in the following link: https://github.com/${{ github.repository }}/blob/gh-pages/surefire-report/emailable-report.html"
+          EMAIL_BODY="Your TestNG tests have completed successfully. Check the report in the following link: https://github.com/mnazrinasari/appium2/blob/gh-pages/surefire-report/emailable-report.html"
           
           # Prepare the email payload and send using Sendinblue API
           curl -X POST https://api.sendinblue.com/v3/smtp/email \
@@ -127,3 +130,6 @@ jobs:
               "subject": "'"$EMAIL_SUBJECT"'",
               "htmlContent": "<html><body><p>'"$EMAIL_BODY"'</p></body></html>"
           }'
+        shell: /bin/bash -e {0}
+        env:
+          JAVA_HOME: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/11.0.25-9/x64/Contents/Home
