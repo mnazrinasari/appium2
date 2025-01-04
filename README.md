@@ -11,3 +11,7 @@ https://github.com/appium/appium
 appium driver install mac2
 
 https://github.com/appium/appium-mac2-driver
+
+3. start appium server
+4. run test
+   mvn test
